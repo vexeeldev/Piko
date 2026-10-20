@@ -15,9 +15,11 @@
 
 <br/>
 
-<video src="public/piko.mp4" width="760" controls autoplay loop muted playsinline>
-  <p>Your browser does not support the video tag. You can view the demo video here: <a href="public/piko.mp4">public/piko.mp4</a></p>
-</video>
+<img src="public/piko.gif" alt="PIKO Dynamic Island Demo" width="680" style="border-radius: 12px; max-width: 100%; height: auto;" />
+
+<p align="center">
+  <sub>🎬 <i>Live showcase of PIKO on desktop.</i> &bull; <a href="public/piko.mp4"><b>Download / Watch HD MP4 Video</b></a></sub>
+</p>
 
 </div>
 
@@ -46,7 +48,7 @@ With true **input-shape masking**, PIKO allows mouse clicks to pass through comp
 - **Autonomous Gaze & Desktop Tracking**: Piko naturally glances around the screen (towards menus, user, diagonal) and locks gaze onto your cursor as you move it across the entire Linux desktop.
 - **3-Way Dynamic Position Gliding**: In the Home Launchpad, Piko glides between Left, Center (splitting menu buttons 2-and-2), and Right positions with playful hop animations.
 - **Interactive Poke & Bounces**: Click or poke Piko to trigger cheerful bounce animations and cycle expressions.
-- **Video Showcase**: Watch Piko in action in [`public/piko.mp4`](public/piko.mp4).
+- **Video & GIF Showcase**: Watch Piko live in [piko.gif](public/piko.gif) and original HD [piko.mp4](public/piko.mp4).
 
 ### 🎵 MPRIS Media Controller
 - **Universal Player Support**: Connects to Spotify, Chrome, Firefox, VLC, MPV, and any player adhering to the Linux D-Bus `org.mpris.MediaPlayer2` specification.
