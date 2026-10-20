@@ -453,7 +453,7 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({
           transform: `translate(${robotTranslateX}px, ${hopY}px)`,
           transition: "transform 0.65s cubic-bezier(0.34, 1.25, 0.64, 1)",
         }}
-        title={`Robot: ${currentMood} (Click to interact!)`}
+        title={`Piko: ${currentMood} (Click to interact!)`}
       >
         <RobotHead
           size={112}

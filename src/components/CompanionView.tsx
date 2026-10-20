@@ -200,8 +200,8 @@ export const CompanionView: React.FC<CompanionViewProps> = () => {
         onClick={handleRobotClick}
         title={
           isTrackingMouse
-            ? "Following cursor across screen"
-            : `Expression: ${currentMood} (Click to switch!)`
+            ? "Piko is following your cursor"
+            : `Piko: ${currentMood} (Click to interact!)`
         }
       >
         <RobotHead

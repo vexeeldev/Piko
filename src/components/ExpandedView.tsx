@@ -216,8 +216,8 @@ export const ExpandedView: React.FC<ExpandedViewProps> = ({
             }}
             onPointerDown={(e) => e.stopPropagation()}
             className="w-6 h-6 flex items-center justify-center cursor-pointer text-white/85 hover:text-white hover:scale-120 active:scale-90 transition-all duration-150 focus:outline-none"
-            title={activeView === "companion" ? "Exit Robot View" : "Open Robot Companion"}
-            aria-label="Robot Companion"
+            title={activeView === "companion" ? "Exit Piko View" : "Meet Piko (Desktop Companion)"}
+            aria-label="Piko Robot Companion"
             aria-pressed={activeView === "companion"}
           >
             {activeView === "companion" ? (
