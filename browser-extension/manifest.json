@@ -1,0 +1,53 @@
+{
+  "manifest_version": 3,
+  "name": "Dynamic Island - WhatsApp Web Call Bridge",
+  "version": "1.0.4",
+  "description": "Bridges WhatsApp Web incoming & active calls to the Linux Dynamic Island desktop widget.",
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://web.whatsapp.com/*",
+    "http://127.0.0.1:14425/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "main-world-interceptor.js"
+      ],
+      "matches": [
+        "https://web.whatsapp.com/*"
+      ]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://web.whatsapp.com/*"
+      ],
+      "js": [
+        "main-world-interceptor.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://web.whatsapp.com/*"
+      ],
+      "js": [
+        "selectors.js",
+        "bridge-client.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

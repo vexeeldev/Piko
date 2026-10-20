@@ -1,0 +1,13 @@
+{
+  "uuid": "dynamic-island-helper@malakul-tech.com",
+  "name": "Dynamic Island Wayland Helper",
+  "description": "Optional GNOME Shell extension to enforce Always-on-Top (keep-above) and Visible on All Workspaces (stick) for Dynamic Island on GNOME Wayland.",
+  "shell-version": [
+    "45",
+    "46",
+    "47"
+  ],
+  "url": "https://github.com/malakul-tech/dynamic-island",
+  "version": 1
+}
+
