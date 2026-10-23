@@ -230,6 +230,71 @@ fn set_island_input_shape(
     Ok(())
 }
 
+#[tauri::command]
+fn speak_text(text: String) -> Result<(), String> {
+    #[cfg(target_os = "linux")]
+    {
+        use std::process::Command;
+        use std::thread;
+
+        // Cancel previous player so sentences never overlap
+        let _ = Command::new("pkill").arg("-9").arg("-f").arg("ffplay").output();
+
+        thread::spawn(move || {
+            let tmp_audio = "/tmp/piko_speech.mp3";
+            let home_dir = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+            let user_local_edge = format!("{}/.local/bin/edge-tts", home_dir);
+            let edge_bin = if std::path::Path::new(&user_local_edge).exists() {
+                user_local_edge.as_str()
+            } else {
+                "edge-tts"
+            };
+
+            // High-quality AI edge-tts with Emma voice (en-US-EmmaNeural, cheerful & conversational)
+            let mut edge_cmd = Command::new(edge_bin);
+            edge_cmd
+                .arg("--voice")
+                .arg("en-US-EmmaNeural")
+                .arg("--rate")
+                .arg("+10%")
+                .arg("--text")
+                .arg(&text)
+                .arg("--write-media")
+                .arg(tmp_audio);
+
+            // Ensure PATH includes ~/.local/bin where edge-tts is installed
+            if let Ok(current_path) = std::env::var("PATH") {
+                let enriched_path = format!("{}/.local/bin:{}", home_dir, current_path);
+                edge_cmd.env("PATH", enriched_path);
+            }
+
+            let edge_res = edge_cmd.output();
+            if let Ok(res) = edge_res {
+                if res.status.success() {
+                    let _ = Command::new("ffplay")
+                        .arg("-nodisp")
+                        .arg("-autoexit")
+                        .arg("-loglevel")
+                        .arg("quiet")
+                        .arg(tmp_audio)
+                        .status();
+                }
+            }
+        });
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn cancel_speech() -> Result<(), String> {
+    #[cfg(target_os = "linux")]
+    {
+        use std::process::Command;
+        let _ = Command::new("pkill").arg("-9").arg("-f").arg("ffplay").output();
+    }
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -249,7 +314,9 @@ pub fn run() {
             get_system_stats,
             set_system_volume,
             toggle_system_mute,
-            get_global_cursor_position
+            get_global_cursor_position,
+            speak_text,
+            cancel_speech
         ])
         .setup(|app| {
             let token = call_bridge::get_or_create_token();

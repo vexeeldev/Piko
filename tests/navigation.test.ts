@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import type { ActiveView, DockedFile, MediaInfo, BatteryInfo, CallInfo } from "../src/types.ts";
+import type { ActiveView, DockedFile, MediaInfo, BatteryInfo, CallInfo, SystemStats } from "../src/types.ts";
+import { PIKO_POKE_PHRASES, PIKO_IDLE_PHRASES, getContextualPhrase } from "../src/utils/pikoSpeech.ts";
 
 test("Navigation State Machine: toggles between home menu and active feature views", () => {
   // Navigation state machine simulating DynamicIsland
@@ -303,6 +304,42 @@ test("System Control Center: verifies volume clamping, mute toggling, and RAM fo
   const ram = formatRam(8192, 16384);
   assert.equal(ram.usedGb, "8.0");
   assert.equal(ram.totalGb, 16);
+});
+
+test("Piko TTS & Dialogue Engine: sequential progression and battery alert", () => {
+  // 1. Phrase pools exist and have exactly 10 phrases
+  assert.equal(PIKO_POKE_PHRASES.length, 10);
+  assert.equal(PIKO_IDLE_PHRASES.length, 10);
+
+  // 2. Battery low warning threshold (<= 20%)
+  const batteryLow: BatteryInfo = {
+    has_battery: true,
+    percentage: 15,
+    is_charging: false,
+    state: "discharging",
+  };
+  const lowPhrase = getContextualPhrase(undefined, batteryLow, undefined, false);
+  assert.equal(lowPhrase, "Battery is at 15%. Time to plug in the charger! 🪫");
+
+  // 3. Autonomous chatter progresses strictly sequentially from 1 to 10 and loops back to top
+  const firstIdle = getContextualPhrase(undefined, undefined, undefined, true);
+  assert.ok(PIKO_IDLE_PHRASES.includes(firstIdle));
+  // Call 9 more times to complete the cycle of 10
+  for (let i = 0; i < 9; i++) {
+    getContextualPhrase(undefined, undefined, undefined, true);
+  }
+  // The next call must loop back to the same phrase as firstIdle
+  const loopIdle = getContextualPhrase(undefined, undefined, undefined, true);
+  assert.equal(loopIdle, firstIdle);
+
+  // 4. Poke dialogue progresses sequentially through poke pool
+  const firstPoke = getContextualPhrase(undefined, undefined, undefined, false);
+  assert.ok(PIKO_POKE_PHRASES.includes(firstPoke));
+  for (let i = 0; i < 9; i++) {
+    getContextualPhrase(undefined, undefined, undefined, false);
+  }
+  const loopPoke = getContextualPhrase(undefined, undefined, undefined, false);
+  assert.equal(loopPoke, firstPoke);
 });
 
 

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { RobotHead, RobotHeadState } from "robot-heads";
 import { isTauri, invoke } from "@tauri-apps/api/core";
 import { MediaInfo, BatteryInfo, SystemStats, CallInfo } from "../types";
+import { PikoChatBubble } from "./PikoChatBubble";
+import { speakPikoTTS, getContextualPhrase } from "../utils/pikoSpeech";
 
 interface CompanionViewProps {
   media?: MediaInfo;
@@ -37,7 +39,12 @@ let persistentCompanionMoodIndex = 0;
 let persistentCompanionWanderIndex = 0;
 let persistentCompanionTargetX = 0;
 
-export const CompanionView: React.FC<CompanionViewProps> = () => {
+export const CompanionView: React.FC<CompanionViewProps> = ({
+  media,
+  battery,
+  stats,
+  call: _call,
+}) => {
   const [moodIndex, setMoodIndex] = useState<number>(persistentCompanionMoodIndex);
   const [wanderIndex, setWanderIndex] = useState<number>(persistentCompanionWanderIndex);
   const [hopY, setHopY] = useState<number>(0);
@@ -47,6 +54,88 @@ export const CompanionView: React.FC<CompanionViewProps> = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mouseIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autonomousChatterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastClickTimeRef = useRef<number>(0);
+
+  // Keep latest props accessible in timers without stale closures
+  const mediaRef = useRef(media);
+  const batteryRef = useRef(battery);
+  const statsRef = useRef(stats);
+
+  useEffect(() => {
+    mediaRef.current = media;
+    batteryRef.current = battery;
+    statsRef.current = stats;
+  }, [media, battery, stats]);
+
+  // TTS Speech & Chat Bubble state
+  const [chatMessage, setChatMessage] = useState<string | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+  const speechCancelRef = useRef<(() => void) | null>(null);
+  const bubbleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const speakMessage = (text: string) => {
+    if (speechCancelRef.current) {
+      speechCancelRef.current();
+    }
+    if (bubbleTimerRef.current) {
+      clearTimeout(bubbleTimerRef.current);
+    }
+
+    setChatMessage(text);
+    setIsSpeaking(true);
+
+    const cancel = speakPikoTTS(
+      text,
+      () => setIsSpeaking(true),
+      () => {
+        setIsSpeaking(false);
+      }
+    );
+    speechCancelRef.current = cancel;
+
+    // Auto-dismiss chat bubble when finished
+    const displayDuration = Math.max(4500, text.length * 90);
+    bubbleTimerRef.current = setTimeout(() => {
+      setChatMessage(null);
+      setIsSpeaking(false);
+    }, displayDuration);
+  };
+
+  // Schedule next spontaneous autonomous chatter (~10-18s)
+  const scheduleNextChatter = () => {
+    if (autonomousChatterTimerRef.current) {
+      clearTimeout(autonomousChatterTimerRef.current);
+    }
+    const delay = Math.floor(Math.random() * 8000) + 10000;
+    autonomousChatterTimerRef.current = setTimeout(() => {
+      const phrase = getContextualPhrase(
+        mediaRef.current,
+        batteryRef.current,
+        statsRef.current,
+        true
+      );
+      speakMessage(phrase);
+      scheduleNextChatter();
+    }, delay);
+  };
+
+  // Welcome greeting and start autonomous chatter loop when entering robot mode
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const phrase = getContextualPhrase(mediaRef.current, batteryRef.current, statsRef.current, false);
+      speakMessage(phrase);
+    }, 450);
+
+    scheduleNextChatter();
+
+    return () => {
+      clearTimeout(timer);
+      if (autonomousChatterTimerRef.current) clearTimeout(autonomousChatterTimerRef.current);
+      if (speechCancelRef.current) speechCancelRef.current();
+      if (bubbleTimerRef.current) clearTimeout(bubbleTimerRef.current);
+    };
+  }, []);
 
   // Keep persistent state in sync
   useEffect(() => {
@@ -156,8 +245,15 @@ export const CompanionView: React.FC<CompanionViewProps> = () => {
     return () => clearInterval(interval);
   }, [isTrackingMouse]);
 
-  // Clicking the robot: triggers a bounce and advances expression
+  // Clicking the robot: triggers a bounce, advances expression, and speaks
   const handleRobotClick = () => {
+    const now = Date.now();
+    // Debounce rapid clicks within 1.2s to prevent overlapping audio
+    if (now - lastClickTimeRef.current < 1200) {
+      return;
+    }
+    lastClickTimeRef.current = now;
+
     if (hopTimerRef.current) clearTimeout(hopTimerRef.current);
     setHopY(-12);
 
@@ -168,13 +264,24 @@ export const CompanionView: React.FC<CompanionViewProps> = () => {
       return next;
     });
 
+    // Piko speaks out loud with cute chime, TTS and chat bubble
+    const phrase = getContextualPhrase(mediaRef.current, batteryRef.current, statsRef.current, false);
+    speakMessage(phrase);
+
+    // Reset autonomous chatter timer so Piko doesn't immediately talk again right after a click
+    scheduleNextChatter();
+
     hopTimerRef.current = setTimeout(() => {
       setHopY(0);
     }, 350);
   };
 
-  // When tracking mouse: stay attentive in 'idle' looking at cursor; otherwise cycle all 9 moods
-  const currentMood = isTrackingMouse ? "idle" : ALL_EXPRESSIONS[moodIndex];
+  // When speaking: show 'speaking' animated mouth; when tracking mouse: attentive 'idle'; otherwise cycle moods
+  const currentMood = isSpeaking
+    ? "speaking"
+    : isTrackingMouse
+    ? "idle"
+    : ALL_EXPRESSIONS[moodIndex];
   const targetX = isTrackingMouse ? mouseTargetX : WANDER_OFFSETS[wanderIndex];
 
   return (
@@ -182,6 +289,18 @@ export const CompanionView: React.FC<CompanionViewProps> = () => {
       ref={containerRef}
       className="relative flex items-center justify-center w-full h-full select-none"
     >
+      {/* Floating Chat Bubble showing what Piko speaks */}
+      <PikoChatBubble
+        message={chatMessage}
+        isSpeaking={isSpeaking}
+        targetX={targetX}
+        onDismiss={() => {
+          setChatMessage(null);
+          setIsSpeaking(false);
+          if (speechCancelRef.current) speechCancelRef.current();
+        }}
+      />
+
       {/* 
         Hardware-accelerated translation wrapper:
         - When tracking mouse: responsive 400ms spring glide directly to cursor position
@@ -198,11 +317,6 @@ export const CompanionView: React.FC<CompanionViewProps> = () => {
           WebkitBackfaceVisibility: "hidden",
         }}
         onClick={handleRobotClick}
-        title={
-          isTrackingMouse
-            ? "Piko is following your cursor"
-            : `Piko: ${currentMood} (Click to interact!)`
-        }
       >
         <RobotHead
           size={142}

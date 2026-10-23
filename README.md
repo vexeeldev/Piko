@@ -44,10 +44,13 @@ With true **input-shape masking**, PIKO allows mouse clicks to pass through comp
 
 ### 🤖 Piko — The Autonomous Desktop Companion
 - **Living Personality**: Piko is your expressive desktop companion living right inside the Dynamic Island.
+- **🔊 AI Text-to-Speech (TTS) & Floating Chat Bubble**: In robot mode, Piko speaks with a cheerful, clear, and conversational voice powered by Microsoft AI (**Emma** - `en-US-EmmaNeural`) and Web Speech API, accompanied by an animated glassmorphic **chat bubble** showing his words in real-time.
+- **Context-Aware Dialogue**: Piko dynamically reacts to what you're doing — commenting on currently playing songs, low battery warnings, charging statuses, and playful greetings when poked or clicked.
+- **Mouth Lip-Sync Animation**: While speaking, Piko's expression automatically switches to an animated `speaking` mouth and returns to normal once finished.
 - **9 Dynamic Facial Expressions**: Features `idle`, `happy`, `thinking`, `searching`, `listening`, `speaking`, `working`, `error`, and `sleeping` states rendered in ultra-crisp vector SVG.
 - **Autonomous Gaze & Desktop Tracking**: Piko naturally glances around the screen (towards menus, user, diagonal) and locks gaze onto your cursor as you move it across the entire Linux desktop.
 - **3-Way Dynamic Position Gliding**: In the Home Launchpad, Piko glides between Left, Center (splitting menu buttons 2-and-2), and Right positions with playful hop animations.
-- **Interactive Poke & Bounces**: Click or poke Piko to trigger cheerful bounce animations and cycle expressions.
+- **Interactive Poke & Bounces**: Click or poke Piko to trigger cheerful bounce animations, voice responses, and cycle expressions.
 - **Video & GIF Showcase**: Watch Piko live in [piko.gif](public/piko.gif) and original HD [piko.mp4](public/piko.mp4).
 
 ### 🎵 MPRIS Media Controller
